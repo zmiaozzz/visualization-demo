@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>canvas</title>
+    <script src="https://d3js.org/d3-hierarchy.v2.min.js"></script>
+    <style>
+        canvas {
+            width: 500px;
+            height: 500px;
+        }
+    </style>
+</head>
+<body>
+<canvas width="1600" height="1600"></canvas>
+<script>
+    const canvas = document.querySelector('canvas');
+    const context = canvas.getContext('2d');
+
+    context.save(); // 暂存状态
+
+    const rectSize = [100, 100];
+
+    context.translate(-0.5 * rectSize[0], -0.5 * rectSize[1]);
+
+    context.fillStyle = 'red';
+    // context.beginPath();
+    // context.rect(0.5 * canvas.width, 0.5 * canvas.height, ...rectSize);
+    context.fill();
+
+    context.restore();
+
+
+    (async function () {
+        const dataSource = 'https://s5.ssl.qhres.com/static/b0695e2dd30daa64.json';
+
+        const data = await (await fetch(dataSource)).json();
+
+        const regions = d3
+            .hierarchy(data)
+            .sum(d => 1)
+            .sort((a, b) => b.value - a.value);
+
+        const pack = d3
+            .pack()
+            .size([1600, 1600])
+            .padding(3);
+
+        const root = pack(regions);
+        console.log(root);
+
+        const cities = root.children.map(x => x.children).flat();
+        let activeCity = null;
+
+        function draw(ctx, node, {fillStyle = 'rgba(0, 0, 0, .2)', textColor = 'white'} = {}) {
+            const {x, y, r, children} = node;
+            ctx.fillStyle = node === activeCity ? 'red' : fillStyle;
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, 2 * Math.PI);
+            ctx.fill();
+
+            if (children) {
+                for(let i = 0; i < children.length; i++) {
+                    draw(ctx, children[i]);
+                }
+            }
+            else {
+                const name = node.data.name;
+                ctx.fillStyle = textColor;
+                ctx.font = '1.5rem Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(name, x, y);
+            }
+        }
+
+        draw(context, root);
+
+        canvas.addEventListener('mousemove', inCircle, false);
+
+        function inCircle(e) {
+            const canvasRect = canvas.getBoundingClientRect();
+            const x = (e.clientX - canvasRect.x) * (canvas.width / canvasRect.width);
+            const y = (e.clientY - canvasRect.y) * (canvas.height / canvasRect.height);
+
+            for (let i = 0; i < cities.length; i++) {
+                const node = cities[i];
+                const dist = Math.pow(x - node.x, 2) + Math.pow(y - node.y, 2) - Math.pow(node.r, 2);
+
+                if (dist < 0) {
+                    if (activeCity !== node) { // 鼠标移到另一个城市
+                        activeCity = node;
+                        context.clearRect(0, 0, canvas.width, canvas.height);
+                        draw(context, root);
+                    }
+                    return;
+                }
+            }
+
+            // 鼠标不在任何一个城市
+            if (activeCity !== null) {
+                activeCity = null;
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                draw(context, root);
+            }
+        }
+
+    })();
+
+
+    function drawCircle(ctx, x, y, r) {
+        const a = 1 / r;
+        ctx.strokeStyle= 'red';
+        ctx.moveTo(x + a, y);
+        ctx.beginPath();
+        for (let i = 0; i < 2 * Math.PI; i += a) {
+            ctx.lineTo(x + r * Math.cos(i), y + r * Math.sin(i));
+        }
+        ctx.stroke();
+        ctx.closePath();
+    }
+
+    // drawCircle(context, 500, 500, 500);
+
+
+</script>
+</body>
+</html>
