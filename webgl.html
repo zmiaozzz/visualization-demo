@@ -3,11 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <title>WebGL</title>
+    <script src="https://unpkg.com/earcut@2.2.2/dist/earcut.min.js"></script>
 </head>
 <body>
-<canvas width="500" height="500"></canvas>
+<canvas id="canvas" width="500" height="500"></canvas>
+<canvas id="canvas1" width="500" height="500"></canvas>
+<canvas id="canvas2" width="500" height="500"></canvas>
 <script>
-    const canvas = document.querySelector('canvas');
+    const canvas = document.getElementById('canvas');
     const gl = canvas.getContext('webgl');
 
     const vertex = `
@@ -62,6 +65,163 @@
 
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.drawArrays(gl.LINE_LOOP, 0, points.length / 2);
+
+
+
+
+    // 填充
+    const canvas1 = document.getElementById('canvas1');
+    const gl1 = canvas1.getContext('webgl');
+
+    const vertex1 = `
+        attribute vec2 position;
+        varying vec3 color;
+
+        void main() {
+            gl_PointSize = 1.0;
+            color = vec3(0.5 + position * 0.5, 0.0);
+            gl_Position = vec4(position * 0.5, 1.0, 1.0);
+        }
+    `;
+
+    const fragment1 = `
+        precision mediump float;
+        varying vec3 color;
+
+        void main() {
+            gl_FragColor = vec4(color, 1.0);
+        }
+    `;
+
+    const vertexShader1 = gl1.createShader(gl1.VERTEX_SHADER);
+    gl1.shaderSource(vertexShader1, vertex1);
+    gl1.compileShader(vertexShader1);
+
+    const fragmentShader1 = gl1.createShader(gl1.FRAGMENT_SHADER);
+    gl1.shaderSource(fragmentShader1, fragment1);
+    gl1.compileShader(fragmentShader1);
+
+    const program1 = gl1.createProgram();
+    gl1.attachShader(program1, vertexShader1);
+    gl1.attachShader(program1, fragmentShader1);
+    gl1.linkProgram(program1);
+
+    gl1.useProgram(program1);
+
+    const vertices = [
+        [-0.7, 0.5],
+        [-0.4, 0.3],
+        [-0.25, 0.71],
+        [-0.1, 0.56],
+        [-0.1, 0.13],
+        [0.4, 0.21],
+        [0, -0.6],
+        [-0.3, -0.3],
+        [-0.6, -0.3],
+        [-0.45, 0.0]
+    ];
+
+    const points1 = vertices.flat();
+    const triangles1 = earcut(points1);
+
+    const position1 = new Float32Array(points1);
+    const cells1 = new Uint16Array(triangles1);
+
+    const pointBuffer = gl1.createBuffer();
+    gl1.bindBuffer(gl1.ARRAY_BUFFER, pointBuffer);
+    gl1.bufferData(gl1.ARRAY_BUFFER, position1, gl1.STATIC_DRAW);
+
+    const vPosition1 = gl1.getAttribLocation(program1, 'position');
+    gl1.vertexAttribPointer(vPosition1, 2, gl1.FLOAT, false, 0, 0);
+    gl1.enableVertexAttribArray(vPosition1);
+
+    const cellsBuffer = gl1.createBuffer();
+    gl1.bindBuffer(gl1.ELEMENT_ARRAY_BUFFER, cellsBuffer);
+    gl1.bufferData(gl1.ELEMENT_ARRAY_BUFFER, cells1, gl1.STATIC_DRAW);
+
+    gl1.clear(gl1.COLOR_BUFFER_BIT);
+    gl1.drawElements(gl1.TRIANGLES, cells1.length, gl1.UNSIGNED_SHORT, 0);
+
+
+
+
+
+    // 椭圆
+    const SEGMENTS = 60;
+    const TAU = 2 * Math.PI;
+
+    function arc(x0, y0, a, b, startAng = 0, endAng = TAU) {
+        const ang = Math.min(TAU, endAng - startAng);
+        const segs = SEGMENTS * ang / TAU;
+        const ret = [];
+        for (let i = 0; i < segs; i++) {
+            const x = x0 + a * Math.cos(startAng + i * ang / segs);
+            const y = y0 + b * Math.sin(startAng + i * ang / segs);
+            ret.push([x, y]);
+        }
+        return ret;
+    }
+
+    const vertex2 = `
+        attribute vec2 position;
+
+        void main() {
+            gl_PointSize = 1.0;
+            gl_Position = vec4(position, 1.0, 1.0);
+        }
+    `;
+
+    const fragment2 = `
+        precision mediump float;
+
+        void main() {
+            gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+        }
+    `;
+
+
+    const canvas2 = document.getElementById('canvas2');
+    const gl2 = canvas2.getContext('webgl');
+
+    const vertexShader2 = gl2.createShader(gl2.VERTEX_SHADER);
+    gl2.shaderSource(vertexShader2, vertex2);
+    gl2.compileShader(vertexShader2);
+
+    const fragmentShader2 = gl2.createShader(gl2.FRAGMENT_SHADER);
+    gl2.shaderSource(fragmentShader2, fragment2);
+    gl2.compileShader(fragmentShader2);
+
+    const program2 = gl2.createProgram();
+    gl2.attachShader(program2, vertexShader2);
+    gl2.attachShader(program2, fragmentShader2);
+    gl2.linkProgram(program2);
+
+    gl2.useProgram(program2);
+
+    const vertices2 = arc(0, 0, 0.7, 0.4);
+    const points2 = vertices2.flat();
+    const triangles2 = earcut(points2);
+    console.log(points2);
+
+    const position2 = new Float32Array(points2);
+    const cells2 = new Uint16Array(triangles2);
+
+    const pointBuffer2 = gl2.createBuffer();
+    gl2.bindBuffer(gl2.ARRAY_BUFFER, pointBuffer2);
+    gl2.bufferData(gl2.ARRAY_BUFFER, position2, gl2.STATIC_DRAW);
+
+    const vPosition2 = gl2.getAttribLocation(program2, 'position');
+    gl2.vertexAttribPointer(vPosition2, 2, gl2.FLOAT, false, 0, 0);
+    gl2.enableVertexAttribArray(vPosition2);
+
+    const cellsBuffer2 = gl2.createBuffer();
+    gl2.bindBuffer(gl2.ELEMENT_ARRAY_BUFFER, cellsBuffer2);
+    gl2.bufferData(gl2.ELEMENT_ARRAY_BUFFER, cells2, gl2.STATIC_DRAW);
+
+    gl2.clear(gl2.COLOR_BUFFER_BIT);
+    gl2.drawElements(gl2.TRIANGLES, cells2.length, gl2.UNSIGNED_SHORT, 0);
+
+
 
 </script>
 </body>

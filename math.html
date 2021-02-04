@@ -87,6 +87,8 @@
     drawBranch(ctx, v0, 50, 10, 1, 3);
 
 
+
+    // 向量描述曲线
     function regularShape(edges = 3, x, y, step) {
         const ret = [];
         // const delta = 2 * Math.PI / edges;
@@ -119,6 +121,8 @@
     draw(regularShape(15, 0, 0, 50));
 
 
+
+    // 参数方程描述曲线
     const TAU_SEGMENTS = 60;
     const TAU = Math.PI * 2;
 
@@ -167,7 +171,7 @@
     draw1(parabola(0, 0, 5.5, -10, 10));
 
 
-    import {parametric} from './draw.js';
+    import {parametric} from './parametric.js';
 
     const canvas4 = document.getElementById('canvas4');
     const ctx4 = canvas4.getContext('2d');
