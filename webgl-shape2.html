@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>webgl-shape</title>
+</head>
+<body>
+<canvas width="512" height="512"></canvas>
+<script id="vertex" type="x-shader/x-vertex">
+    attribute vec2 position;
+    attribute vec2 uv;
+    varying vec2 vUv;
+
+    void main() {
+        gl_PointSize = 1.0;
+        vUv = uv;
+        gl_Position = vec4(position, 1, 1);
+    }
+</script>
+<script id="fragment" type="x-shader/x-fragment">
+    precision highp float;
+    varying vec2 vUv;
+
+    float random(vec2 st) {
+        return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
+    }
+
+    void main() {
+        vec2 st = vUv * 10.0;
+        gl_FragColor.rgb = vec3(random(floor(st)));
+        gl_FragColor.a = 1.0;
+    }
+</script>
+<script>
+    const canvas = document.querySelector('canvas');
+    const gl = canvas.getContext('webgl');
+
+    const vertex = document.getElementById('vertex').text;
+    const fragment = document.getElementById('fragment').text;
+
+    const vertexShader = gl.createShader(gl.VERTEX_SHADER);
+    gl.shaderSource(vertexShader, vertex);
+    gl.compileShader(vertexShader);
+
+    const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+    gl.shaderSource(fragmentShader, fragment);
+    gl.compileShader(fragmentShader);
+
+    const program = gl.createProgram();
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+
+    gl.linkProgram(program);
+    gl.useProgram(program);
+
+    // uniforms
+    // let loc = gl.getUniformLocation(program, 'center');
+    // gl.uniform2fv(loc, [0, 0]);
+    // loc = gl.getUniformLocation(program, 'scale');
+    // gl.uniform1f(loc, 1);
+    // loc = gl.getUniformLocation(program, 'iterations');
+    // gl.uniform1i(loc, 256);
+
+    // 数据
+    const positions = new Float32Array([
+        -1, -1,
+        -1, 1,
+        1, 1,
+        1, -1
+    ]);
+
+    const uv = new Float32Array([
+        0, 0,
+        0, 1,
+        1, 1,
+        1, 0
+    ]);
+
+    const cells = [
+        [0, 1, 2],
+        [2, 0, 3]
+    ];
+
+    const cellPosition = new Uint16Array(cells.flat());
+
+    const bufferId = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
+    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+
+    const cellsBuffer= gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cellsBuffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, cellPosition, gl.STATIC_DRAW);
+
+    const vPosition = gl.getAttribLocation(program, 'position');
+    gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vPosition);
+
+    const uvBuffer= gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, uv, gl.STATIC_DRAW);
+
+    const vUv = gl.getAttribLocation(program, 'uv');
+    gl.vertexAttribPointer(vUv, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vUv);
+
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.drawElements(gl.TRIANGLES, cellPosition.length, gl.UNSIGNED_SHORT, 0);
+
+
+
+</script>
+</body>
+</html>

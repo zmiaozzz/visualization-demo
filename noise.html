@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>使用片元着色器绘制图形</title>
+</head>
+<body>
+<canvas width="300" height="300"></canvas>
+<script id="vertex" type="x-shader/x-vertex">
+    attribute vec2 position;
+    attribute vec2 uv;
+    varying vec2 vUv;
+
+    void main() {
+        gl_PointSize = 1.0;
+        vUv = uv;
+        gl_Position = vec4(position, 1.0, 1.0);
+    }
+</script>
+<script id="fragment" type="x-shader/x-fragment">
+    precision highp float;
+
+    varying vec2 vUv;
+
+    float random(float x) {
+        return fract(sin(x * 1243758.5453123));
+    }
+
+    void main() {
+        vec2 st = vUv - vec2(0.5);
+        st *= 10.0;
+        float i = floor(st.x);
+        float f = fract(st.x);
+
+//        float d = random(st.x);
+        float d = random(i);
+//        float d = mix(random(i), random(i + 1.0), f);
+//        float d = mix(random(i), random(i + 1.0), smoothstep(0.0, 1.0, f));
+//        float d = mix(random(i), random(i + 1.0), f * f * (3.0 - 2.0 * f));
+
+        gl_FragColor.rgb = (smoothstep(st.y - 0.05, st.y, d) - smoothstep(st.y, st.y + 0.05, d)) * vec3(1.0);
+        gl_FragColor.a = 1.0;
+    }
+</script>
+<script>
+    const canvas = document.querySelector('canvas');
+    const gl = canvas.getContext('webgl');
+
+    const vertex = document.getElementById('vertex').text;
+    const fragment = document.getElementById('fragment').text;
+
+    const vertexShader = gl.createShader(gl.VERTEX_SHADER);
+    gl.shaderSource(vertexShader, vertex);
+    gl.compileShader(vertexShader);
+
+    const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+    gl.shaderSource(fragmentShader, fragment);
+    gl.compileShader(fragmentShader);
+
+    const program = gl.createProgram();
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+
+    gl.linkProgram(program);
+    gl.useProgram(program);
+
+    const position = new Float32Array([
+        -1, -1,
+        -1, 1,
+        1, 1,
+        1, -1
+    ]);
+    const uv = new Float32Array([
+        0, 0,
+        0, 1,
+        1, 1,
+        1, 0
+    ]);
+    const cells = [
+        [0, 1, 2],
+        [2, 0, 3]
+    ];
+
+    const cellPosition = new Uint16Array(cells.flat());
+
+    const bufferId = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
+    gl.bufferData(gl.ARRAY_BUFFER, position, gl.STATIC_DRAW);
+
+    const vPosition = gl.getAttribLocation(program, 'position');
+    gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vPosition);
+
+    const uvBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, uv, gl.STATIC_DRAW);
+
+    const vUv = gl.getAttribLocation(program, 'uv');
+    gl.vertexAttribPointer(vUv, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vUv);
+
+    const cellBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cellBuffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, cellPosition,gl.STATIC_DRAW);
+
+    // let loc = gl.getUniformLocation(program, 'uMouse');
+    // gl.uniform2fv(loc, [-1, -1]);
+    // loc = gl.getUniformLocation(program, 'uOrigin');
+    // gl.uniform2fv(loc, [0.5, 0.5]);
+    //
+    // canvas.addEventListener('mousemove', e => {
+    //     const loc = gl.getUniformLocation(program, 'uMouse');
+    //     const {x, y, width, height} = e.target.getBoundingClientRect();
+    //     gl.uniform2fv(loc, [(e.x - x) / width, 1.0 - (e.y - y) / height]);
+    //     gl.drawElements(gl.TRIANGLES, cellPosition.length, gl.UNSIGNED_SHORT, 0);
+    // });
+
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.drawElements(gl.TRIANGLES, cellPosition.length, gl.UNSIGNED_SHORT, 0);
+
+
+
+</script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Phong反射模型</title>
+</head>
+<body>
+<canvas width="512" height="512"></canvas>
+<script id="vertex" type="x-shader/x-vertex">
+
+</script>
+<script id="fragment" type="x-shader/x-fragment">
+
+</script>
+<script>
+    class Phong {
+        constructor(ambientLight = [0.5, 0.5, 0,5]) {
+            this.ambientLight = ambientLight;
+            this.directionalLights = new Set(); // 平行光，可以定义多个
+            this.pointLight = new Set(); // 点光源，可以定义多个
+            this.spotLights = new Set(); // 聚光灯，可以定义多个
+        }
+
+        addLight(light) {
+            const {position, direction, color, decay, angle} = light;
+            if (!position && !direction) {
+                throw new TypeError('invalid light');
+            }
+            light.color = color || [1, 1, 1];
+            if (!position) {
+                this.directionalLights.add(light);
+            }
+            else {
+                light.decay = decay || [0, 0, 1];
+                if (!angle) {
+                    this.pointLight.add(light);
+                }
+                else {
+                    this.spotLights.add(light);
+                }
+            }
+        }
+    }
+</script>
+<script>
+    const canvas = document.querySelector('canvas');
+
+    const vertex = document.getElementById('vertex').text;
+    const fragment = document.getElementById('fragment').text;
+
+
+
+</script>
+</body>
+</html>

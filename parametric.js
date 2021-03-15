@@ -19,7 +19,7 @@ function draw(points, context, {
     context.stroke();
 }
 
-export function parametric(xFunc, yFunc) {
+export function parametric(xFunc, yFunc, rFunc) {
     return function (start, end, seg = 100, ...args) {
         const points = [];
         for (let i = 0; i <= seg; i++) {
@@ -27,7 +27,12 @@ export function parametric(xFunc, yFunc) {
             const t = start * (1 - p) + end * p;
             const x = xFunc(t, ...args);
             const y = yFunc(t, ...args);
-            points.push([x, y]);
+            if (rFunc) {
+                points.push(rFunc(x, y));
+            }
+            else {
+                points.push([x, y]);
+            }
         }
         return {
             draw: draw.bind(null, points),
